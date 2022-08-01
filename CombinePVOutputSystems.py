@@ -119,6 +119,8 @@ def readInMemory(prefix, content, dateString, targetMinutes, lastWrittenWh):
     while i >= 0:
         line = splitted[i]
         #print('Lineno ', i, ': ', line)
+        i -= 1
+        
         d, t, whStr, energyEfficiency, w, averagePower, normalisedOutput, energyConsumption, PowerConsumption, temp, v = line.split(',')
         if d != dateString: # skip dates not today
             continue # not interested in other days
@@ -160,7 +162,6 @@ def readInMemory(prefix, content, dateString, targetMinutes, lastWrittenWh):
             lastWrittenTime = minutesToTimeString(minutes)
             lastWrittenWh = wh
             
-        i -= 1
         prevLine = line
         prevWh = wh
 
