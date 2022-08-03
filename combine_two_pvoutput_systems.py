@@ -103,7 +103,6 @@ def add_datapoints(datapoints_count, datapoints_str) -> str:
     """add datapoints"""
     log('Target datapoints: ' + str(datapoints_count))
     print_splitted(datapoints_str)
-    return
     retry = 0
     while True:
         retry = retry + 1
