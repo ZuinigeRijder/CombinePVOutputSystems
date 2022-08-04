@@ -42,17 +42,13 @@ TARGET_HEADERS = {
     'Accept': 'text/plain'
 }
 
-
-# == now_yyyymmdd ============================================================
-def now_yyyymmdd():
-    """return now yymmdd string"""
-    return datetime.now().strftime("%Y%m%d")
+TODAY = datetime.now().strftime("%Y%m%d")  # format yyyymmdd
 
 
 # == log =====================================================================
 def log(msg):
     """log a message prefixed with a date/time format yyyymmdd hh:mm:ss"""
-    print(datetime.now().strftime("%Y%m%d %H:%M:%S") + ': ' + msg)
+    print(TODAY + datetime.now().strftime(" %H:%M:%S") + ': ' + msg)
 
 
 # == print_splitted ==========================================================
@@ -120,7 +116,7 @@ def add_datapoints(datapoints_count, datapoints_str) -> str:
 # == get_status ==============================================================
 def get_status(prefix, url, since_hhmm) -> str:
     """get status with prefix and parameters logged"""
-    parameters = '&d="' + now_yyyymmdd() + '"&t="' + since_hhmm + '"'
+    parameters = '&d="' + TODAY + '"&t="' + since_hhmm + '"'
     request_url = url + parameters
     content = get(prefix + ' ' + parameters, request_url)
     return content
@@ -130,7 +126,7 @@ def get_status(prefix, url, since_hhmm) -> str:
 def compute_minutes(content) -> int:
     """compute minutes for this day with the first time"""
     minutes = 300  # start at 5 hours
-    if len(content) > 14 and content[0:8] == now_yyyymmdd():
+    if len(content) > 14 and content[0:8] == TODAY:
         minutes = round(int(content[9:11]) * 60 + int(content[12:14]))
     return minutes
 
@@ -149,7 +145,7 @@ def process_line(line, prev_line, prev_wh, target_minutes, minutes_dict):
     """process line"""
     (date_str, time_str, watthour_str, _, watt_str,
         _, _, _, _, _, volt_str) = line.split(',')
-    if date_str != now_yyyymmdd():  # skip dates not today
+    if date_str != TODAY:  # skip dates not today
         return 0, 0, ''  # not interested in other days
 
     watthour = int(watthour_str)
@@ -350,7 +346,7 @@ def process(
         # only write when AFTER last target time
         if from_minutes > written_target_minutes:
             pvoutput_string = (
-                now_yyyymmdd() + ',' +
+                TODAY + ',' +
                 minutes_to_hhmm(from_minutes) + ',' +
                 str(watthour) + ',' + str(watt) + ',,,,' + str(round(volt))
             )
