@@ -25,13 +25,13 @@ The python script requires multiple PVOutput API_KEY and SYSTEM_ID to function.
 * Save your settings
 
 ## Configuration
-Change in combine_two_pvoutput_systems.py the following lines with your above obtained secrets:
-* PVOUTPUT_SOURCE1_API_KEY = 'xxxx'
-* PVOUTPUT_SOURCE1_SYSTEM_ID = 'xxxx'
-* PVOUTPUT_SOURCE2_API_KEY = 'xxxx'
-* PVOUTPUT_SOURCE2_SYSTEM_ID = 'xxxx'
-* PVOUTPUT_TARGET_API_KEY = 'xxxx'
-* PVOUTPUT_TARGET_SYSTEM_ID = 'xxxx'
+Change in combine_two_pvoutput_systems.cfg the following lines with your above obtained secrets:
+* pvoutput_source1_api_key = a930b6cfe4c326b0b15b83bc3501ddf123456789
+* pvoutput_source1_system_id = 12345
+* pvoutput_source2_api_key = 0f2dd8190d00369ec893b059034dde1123456789
+* pvoutput_source2_system_id = 12346
+* pvoutput_target_api_key = 6d7be6f183fc02c53f5792d1ec37180123456789
+* pvoutput_target_system_id = 12347
 
 ## Usage
 ### Windows 10
@@ -43,8 +43,8 @@ combine_two_pvoutput_systems.py script runs on my Raspberry pi Model B with 512 
 ### Raspberry pi Configuration
 Steps:
 * create a directory solis in your home directory
-* copy pvoutput.sh and combine_two_pvoutput_systems.py in this solis directory
-* change inside combine_two_pvoutput_systems.py the API_KEY and SYSTEM_ID secrets
+* copy pvoutput.sh, combine_two_pvoutput_systems.py and combine_two_pvoutput_systems.cfg in this solis directory
+* change inside combine_two_pvoutput_systems.cfg the API_KEY and SYSTEM_ID secrets
 * chmod + x pvoutput.sh
 * add the following line in your crontab -e:
 

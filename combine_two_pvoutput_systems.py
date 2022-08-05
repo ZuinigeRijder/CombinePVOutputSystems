@@ -5,19 +5,25 @@ Simple Python3 script to combine two PVOutput Systems continously
 """
 import time
 import sys
+import configparser
 from datetime import datetime
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen, Request
 
-# == Secrets, fill in yours ==================================================
-PVOUTPUT_SOURCE1_API_KEY = 'xxxx'
-PVOUTPUT_SOURCE1_SYSTEM_ID = 'xxxx'
+# == read api_secrets in combine_two_pvoutput_systems.cfg ====================
+parser = configparser.ConfigParser()
+parser.read('combine_two_pvoutput_systems.cfg')
+api_secrets = dict(parser.items('api_secrets'))
 
-PVOUTPUT_SOURCE2_API_KEY = 'xxxx'
-PVOUTPUT_SOURCE2_SYSTEM_ID = 'xxxx'
+# == Secrets, fill in yours in combine_two_pvoutput_systems.cfg ==============
+PVOUTPUT_SOURCE1_API_KEY = api_secrets['pvoutput_source1_api_key']
+PVOUTPUT_SOURCE1_SYSTEM_ID = api_secrets['pvoutput_source1_system_id']
 
-PVOUTPUT_TARGET_API_KEY = 'xxxx'
-PVOUTPUT_TARGET_SYSTEM_ID = 'xxxx'
+PVOUTPUT_SOURCE2_API_KEY = api_secrets['pvoutput_source2_api_key']
+PVOUTPUT_SOURCE2_SYSTEM_ID = api_secrets['pvoutput_source2_system_id']
+
+PVOUTPUT_TARGET_API_KEY = api_secrets['pvoutput_target_api_key']
+PVOUTPUT_TARGET_SYSTEM_ID = api_secrets['pvoutput_target_system_id']
 
 # == Constants ===============================================================
 PVOUTPUT_GET_URL = 'https://pvoutput.org/service/r2/getstatus.jsp'
