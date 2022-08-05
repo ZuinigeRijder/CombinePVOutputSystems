@@ -61,52 +61,27 @@ Log files are written in the home subdirectory solis
 ### Example output pvoutput.log
 
 ```
-20220803 14:06:04: GET Target   &d="20220803"&t="05:00"
-20220803 14:06:05: Target   read_in_memory since: 05:00
-20220803 14:06:05: Target   read_in_memory last values: written time=05:00, written wh=0, wh=14209, line=20220803,13:55,14209,4686,,,,391.0
-20220803 14:06:05: Last Written target: 13:55
-20220803 14:06:05: GET Source 1 &d="20220803"&t="13:55"
-20220803 14:06:05: Source 1 read_in_memory since: 13:55
-20220803 14:06:06: Source 1 read_in_memory last values: written time=13:55, written wh=7544, wh=7809, line=20220803,14:00,7809,3180,,,,237.5
-20220803 14:06:06: GET Source 2 &d="20220803"&t="13:55"
-20220803 14:06:06: Sleeping for 5 minutes
-20220803 14:11:06: GET Source 1 &d="20220803"&t="13:55"
-20220803 14:11:07: Source 1 read_in_memory since: 13:55
-20220803 14:11:07: Source 1 read_in_memory last values: written time=13:55, written wh=7544, wh=8079, line=20220803,14:05,8079,3240,,,,237.5
-20220803 14:11:07: GET Source 2 &d="20220803"&t="13:55"
-20220803 14:11:08: Source 2 read_in_memory since: 13:55
-Missing entry:
----> 20220803,13:55,6665,1530,,,,154.0
----> 20220803,14:05,6900,1520,,,,153.9
-Prev : 20220803,13:55,6665,1530,,,,154.0
-Added: 20220803,14:00,6782,1520,,,,153.9
-Next : 20220803,14:05,6900,1520,,,,153.9
-
-20220803 14:11:08: Source 2 read_in_memory last values: written time=13:55, written wh=6665, wh=6900, line=20220803,14:05,6900,1520,,,,153.9
-20220803 14:11:08: Processing....
-20220803 14:11:08: Target datapoints: 2
-1: data=20220803,14:00,14591,4700,,,,391
-2: 20220803,14:05,14979,4760,,,,391
-20220803 14:11:08: Sleeping for 5 minutes
-20220803 14:16:08: GET Source 1 &d="20220803"&t="14:05"
-20220803 14:16:09: Source 1 read_in_memory since: 14:05
-20220803 14:16:09: Source 1 read_in_memory last values: written time=14:05, written wh=8079, wh=8351, line=20220803,14:10,8351,3264,,,,237.4
-20220803 14:16:09: GET Source 2 &d="20220803"&t="14:05"
-20220803 14:16:10: Source 2 read_in_memory since: 14:05
-20220803 14:16:10: Source 2 read_in_memory last values: written time=14:05, written wh=6900, wh=7025, line=20220803,14:10,7025,1510,,,,150.1
-20220803 14:16:10: Processing....
-20220803 14:16:10: Target datapoints: 1
-1: data=20220803,14:10,15376,4774,,,,388
-20220803 14:16:10: Sleeping for 5 minutes
-20220803 14:21:10: GET Source 1 &d="20220803"&t="14:10"
-20220803 14:21:10: Source 1 read_in_memory since: 14:10
-20220803 14:21:11: Source 1 read_in_memory last values: written time=14:10, written wh=8351, wh=8625, line=20220803,14:15,8625,3288,,,,237.6
-20220803 14:21:11: GET Source 2 &d="20220803"&t="14:10"
-20220803 14:21:11: Source 2 read_in_memory since: 14:10
-20220803 14:21:11: Source 2 read_in_memory last values: written time=14:10, written wh=7025, wh=7149, line=20220803,14:15,7149,1490,,,,150.4
-20220803 14:21:11: Processing....
-20220803 14:21:11: Target datapoints: 1
-1: data=20220803,14:15,15774,4778,,,,388
-20220803 14:21:11: Sleeping for 5 minutes
+20220805 08:15:06: Target   read_in_memory since 05:00: written=05:00, written wh=0, wh=152, line=20220805,08:05,152,294,,,,410.0
+20220805 08:15:06: Last Written target: 08:05
+20220805 08:15:06: Source 1 read_in_memory since 08:05: written=08:05, written wh=107, wh=124, line=20220805,08:10,124,204,,,,234.4
+20220805 08:15:07: Source 2 read_in_memory since 08:05: written=08:05, written wh=45, wh=53, line=20220805,08:10,53,100,,,,175.6
+20220805 08:15:07: Sleeping for 5 minutes
+20220805 08:20:08: Source 1 read_in_memory since 08:05: written=08:05, written wh=107, wh=141, line=20220805,08:15,141,204,,,,234.6
+20220805 08:20:08: Source 2 read_in_memory since 08:05: written=08:05, written wh=45, wh=62, line=20220805,08:15,62,110,,,,179.6
+20220805 08:20:08: Target datapoints: 2
+1: data=20220805,08:10,177,304,,,,410
+2: 20220805,08:15,203,314,,,,414
+20220805 08:25:09: Source 1 read_in_memory since 08:15: written=08:15, written wh=141, wh=161, line=20220805,08:20,161,240,,,,234.8
+20220805 08:25:10: Source 2 read_in_memory since 08:15: written=08:15, written wh=62, wh=71, line=20220805,08:20,71,110,,,,179.5
+20220805 08:25:10: Target datapoints: 1
+1: data=20220805,08:20,232,350,,,,414
+20220805 08:30:11: Source 1 read_in_memory since 08:20: written=08:20, written wh=161, wh=178, line=20220805,08:25,178,204,,,,234.3
+20220805 08:30:12: Source 2 read_in_memory since 08:20: written=08:20, written wh=71, wh=100, line=20220805,08:25,100,130,,,,179.6
+20220805 08:30:12: Target datapoints: 1
+1: data=20220805,08:25,278,334,,,,414
+20220805 08:35:13: Source 1 read_in_memory since 08:25: written=08:25, written wh=178, wh=196, line=20220805,08:30,196,216,,,,234.0
+20220805 08:35:14: Source 2 read_in_memory since 08:25: written=08:25, written wh=100, wh=107, line=20220805,08:30,107,90,,,,167.6
+20220805 08:35:14: Target datapoints: 1
+1: data=20220805,08:30,303,306,,,,402
 ```
 
