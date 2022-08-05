@@ -61,9 +61,8 @@ def print_splitted(content):
 
 
 # ==  get_or_post=============================================================
-def get_or_post(prefix, url, request) -> str:
+def get_or_post(url, request) -> str:
     """get or post url request with prefix logged"""
-    log(prefix)
     errorstring = ''
     try:
         with urlopen(request, timeout=10) as response:
@@ -84,10 +83,10 @@ def get_or_post(prefix, url, request) -> str:
 
 
 # == get =====================================================================
-def get(prefix, url) -> str:
+def get(url) -> str:
     """get url request with prefix logged"""
     request = Request(url)
-    content = get_or_post('GET ' + prefix, url, request)
+    content = get_or_post(url, request)
     return content
 
 
@@ -96,7 +95,7 @@ def post(url, data, headers) -> str:
     """post url data with headers"""
     post_data = data.encode("utf-8")
     request = Request(url, data=post_data, headers=headers)
-    content = get_or_post('POST Target', url, request)
+    content = get_or_post(url, request)
     return content
 
 
@@ -114,11 +113,10 @@ def add_datapoints(datapoints_count, datapoints_str) -> str:
 
 
 # == get_status ==============================================================
-def get_status(prefix, url, since_hhmm) -> str:
+def get_status(url, since_hhmm) -> str:
     """get status with prefix and parameters logged"""
-    parameters = '&d="' + TODAY + '"&t="' + since_hhmm + '"'
-    request_url = url + parameters
-    content = get(prefix + ' ' + parameters, request_url)
+    request_url = url + '&d="' + TODAY + '"&t="' + since_hhmm + '"'
+    content = get(request_url)
     return content
 
 
@@ -197,7 +195,6 @@ def read_in_memory(
 ):
     """read content in memory with 5 minutes intervals"""
     since_time = minutes_to_hhmm(written_target_minutes)
-    log(prefix + ' read_in_memory since: ' + since_time)
     minutes_dict = {}
     splitted = content.split(';')
     prev_line = ''
@@ -226,7 +223,7 @@ def read_in_memory(
         prev_wh = watthour
 
     log(prefix +
-        ' read_in_memory last values: written time=' + written_hhmm +
+        ' read_in_memory since ' + since_time + ': written=' + written_hhmm +
         ', written wh=' + str(written_watthour) + ', wh=' + str(prev_wh) +
         ', line=' + prev_line)
     return written_watthour, minutes_dict
@@ -327,7 +324,6 @@ def process(
     written_watthour_2
 ):
     """process"""
-    log("Processing....")
     datapoints_count = 0
     datapoints_str = 'data='
 
@@ -367,7 +363,7 @@ def compute_dictionary(
 ):
     """compute dictionary"""
     since_hhmm = minutes_to_hhmm(written_target_minutes)
-    content = get_status(prefix, url, since_hhmm)
+    content = get_status(url, since_hhmm)
     current_minutes = compute_minutes(content)
     minutes_dict = {}
     written_watthour = 0
@@ -392,9 +388,10 @@ def main_loop():
         'Source 1', GET_SOURCE_1_URL, written_target_minutes, 0)
     written_minutes_2, written_watthour_2, _ = compute_dictionary(
         'Source 2', GET_SOURCE_2_URL, written_target_minutes, 0)
+    log('Sleeping for 5 minutes')
 
     while True:
-        log('Sleeping for 5 minutes')
+
         time.sleep(300)  # wait 5 minutes before checking again
 
         # only check between 5 and 23 hours
