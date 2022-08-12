@@ -62,13 +62,13 @@ def print_splitted(content):
     """print parameter splitted by ; line by line"""
     count = 0
     for item in content.split(';'):
-        count = count + 1
+        count += 1
         print(str(count) + ': ' + item)
 
 
-# ==  get_or_post=============================================================
-def get_or_post(url, request) -> str:
-    """get or post url request with prefix logged"""
+# == execute_request =========================================================
+def execute_request(url, request) -> str:
+    """execute request and log url in case of errors"""
     errorstring = ''
     try:
         with urlopen(request, timeout=10) as response:
@@ -88,42 +88,33 @@ def get_or_post(url, request) -> str:
     return 'ERROR'
 
 
-# == get =====================================================================
-def get(url) -> str:
-    """get url request with prefix logged"""
-    request = Request(url)
-    content = get_or_post(url, request)
-    return content
-
-
-# == post ====================================================================
-def post(url, data, headers) -> str:
-    """post url data with headers"""
-    post_data = data.encode("utf-8")
-    request = Request(url, data=post_data, headers=headers)
-    content = get_or_post(url, request)
-    return content
-
-
 # == add_datapoints ==========================================================
 def add_datapoints(datapoints_count, datapoints_str) -> str:
     """add datapoints"""
     log('Target datapoints: ' + str(datapoints_count))
     print_splitted(datapoints_str)
+    post_data = datapoints_str.encode("utf-8")
     retry = 0
     while True:
-        retry = retry + 1
-        content = post(PVOUTPUT_ADD_URL, datapoints_str, TARGET_HEADERS)
-        if content != 'ERROR' or retry > 10:
+        retry += 1
+        request = Request(
+            PVOUTPUT_ADD_URL, data=post_data, headers=TARGET_HEADERS)
+        content = execute_request(PVOUTPUT_ADD_URL, request)
+        if content != 'ERROR' or retry > 30:
+            if content == 'ERROR':
+                log('ERROR: number of retries exceeded')
             return content
 
 
-# == get_status ==============================================================
-def get_status(url, since_hhmm) -> str:
-    """get status with prefix and parameters logged"""
+# == get_pvoutput_entries_since ==============================================
+def get_pvoutput_entries_since(url, since_hhmm) -> str:
+    """get pvoutput entries since time today"""
     request_url = url + '&d="' + TODAY + '"&t="' + since_hhmm + '"'
-    content = get(request_url)
-    return content
+    while True:
+        request = Request(request_url)
+        content = execute_request(request_url, request)
+        if content != 'ERROR':
+            return content
 
 
 # == compute_minutes =========================================================
@@ -144,9 +135,11 @@ def minutes_to_hhmm(minutes) -> str:
     return hhmm
 
 
-# == process_line ==========================================================
-def process_line(line, prev_line, prev_wh, target_minutes, minutes_dict):
-    """process line"""
+# == process_one_pvoutput_result =============================================
+def process_one_pvoutput_result(
+    line, prev_line, prev_wh, target_minutes, minutes_dict
+) -> tuple[int, int, str]:
+    """process one pvoutput result"""
     (date_str, time_str, watthour_str, _, watt_str,
         _, _, _, _, _, volt_str) = line.split(',')
     if date_str != TODAY:  # skip dates not today
@@ -192,14 +185,14 @@ def process_line(line, prev_line, prev_wh, target_minutes, minutes_dict):
     return minutes, watthour, line
 
 
-# == read_in_memory ==========================================================
-def read_in_memory(
+# == read_entries_in_memory_with_5_minutes_intervals =========================
+def read_entries_in_memory_with_5_minutes_intervals(
     prefix,
     content,
     written_target_minutes,
     written_watthour
-):
-    """read content in memory with 5 minutes intervals"""
+) -> tuple[int, dict]:
+    """read entries in memory with 5 minutes intervals"""
     since_time = minutes_to_hhmm(written_target_minutes)
     minutes_dict = {}
     splitted = content.split(';')
@@ -212,7 +205,7 @@ def read_in_memory(
         i -= 1
 
         prev_minutes = compute_minutes(prev_line)
-        minutes, watthour, line = process_line(
+        minutes, watthour, line = process_one_pvoutput_result(
             line, prev_line, prev_wh, written_target_minutes,
             minutes_dict)
         if line == '':
@@ -236,7 +229,9 @@ def read_in_memory(
 
 
 # == compute_values ==========================================================
-def compute_values(source_dict, from_minutes, written_watthour):
+def compute_values(
+    source_dict, from_minutes, written_watthour
+) -> tuple[int, int, float, int]:
     """compute watthour, watt, volt and last written watthour"""
     watthour = 0
     watt = 0
@@ -260,7 +255,7 @@ def compute_combined_values(
     from_minutes,
     written_watthour_1,
     written_watthour_2
-):
+) -> tuple[int, int, float, int, int]:
     """compute combined values of source 1 and 2"""
     watthour, watt, volt, written_watthour_1 = compute_values(
         source_1_dict, from_minutes, written_watthour_1)
@@ -282,7 +277,9 @@ def compute_combined_values(
 
 
 # == compute_from_and_to_minutes =============================================
-def compute_from_and_to_minutes(source_1_dict, source_2_dict):
+def compute_from_and_to_minutes(
+    source_1_dict, source_2_dict
+) -> tuple[int, int]:
     """compute from_minutes and to_minutes"""
 
     # Since python 3.7 the order is insertion
@@ -307,7 +304,7 @@ def compute_from_and_to_minutes(source_1_dict, source_2_dict):
 # == construct_and_add_datapoints ===========================================
 def construct_and_add_datapoints(
     pvoutput_string, datapoints_count, datapoints_str
-):
+) -> tuple[int, str]:
     """construct and add datapoints if above 29"""
     datapoints_count += 1
     if datapoints_count > 1:
@@ -321,15 +318,15 @@ def construct_and_add_datapoints(
     return datapoints_count, datapoints_str
 
 
-# == process ===============================================================
-def process(
+# == process_sources_entries =================================================
+def process_sources_entries(
     source_1_dict,
     source_2_dict,
     written_target_minutes,
     written_watthour_1,
     written_watthour_2
-):
-    """process"""
+) -> tuple[int, int]:
+    """process sources entries"""
     datapoints_count = 0
     datapoints_str = 'data='
 
@@ -363,19 +360,19 @@ def process(
     return written_watthour_1, written_watthour_2
 
 
-# == compute_dictionary ======================================================
-def compute_dictionary(
+# == compute_entries_since ===================================================
+def compute_entries_since(
     prefix, url, written_target_minutes, written_watthour
-):
-    """compute dictionary"""
+) -> tuple[int, int, dict]:
+    """compute dictionary entries since time"""
     since_hhmm = minutes_to_hhmm(written_target_minutes)
-    content = get_status(url, since_hhmm)
+    content = get_pvoutput_entries_since(url, since_hhmm)
     current_minutes = compute_minutes(content)
     minutes_dict = {}
     written_watthour = 0
     if current_minutes > written_target_minutes:
         written_watthour, minutes_dict = \
-            read_in_memory(
+            read_entries_in_memory_with_5_minutes_intervals(
                 prefix, content,
                 written_target_minutes, written_watthour
             )
@@ -387,12 +384,12 @@ def compute_dictionary(
 def main_loop():
     """main loop"""
     # get the latest values
-    written_target_minutes, _, _ = compute_dictionary(
+    written_target_minutes, _, _ = compute_entries_since(
         'Target  ', GET_TARGET_URL, 300, 0)
     log("Last Written target: " + minutes_to_hhmm(written_target_minutes))
-    written_minutes_1, written_watthour_1, _ = compute_dictionary(
+    written_minutes_1, written_watthour_1, _ = compute_entries_since(
         'Source 1', GET_SOURCE_1_URL, written_target_minutes, 0)
-    written_minutes_2, written_watthour_2, _ = compute_dictionary(
+    written_minutes_2, written_watthour_2, _ = compute_entries_since(
         'Source 2', GET_SOURCE_2_URL, written_target_minutes, 0)
     log('Sleeping for 5 minutes')
 
@@ -406,7 +403,7 @@ def main_loop():
             log('Outside solar generation hours (5..23)')
             sys.exit('Exiting program to start fresh tomorrow')
 
-        written_minutes_1, _, source_1_dict = compute_dictionary(
+        written_minutes_1, _, source_1_dict = compute_entries_since(
             'Source 1', GET_SOURCE_1_URL, written_target_minutes,
             written_watthour_1)
         if written_minutes_1 <= written_target_minutes and hour_now != 22:
@@ -414,7 +411,7 @@ def main_loop():
             # because other inverter might be sleeping
             continue  # nothing to do
 
-        written_minutes_2, _, source_2_dict = compute_dictionary(
+        written_minutes_2, _, source_2_dict = compute_entries_since(
             'Source 2', GET_SOURCE_2_URL, written_target_minutes,
             written_watthour_2)
         if written_minutes_2 <= written_target_minutes and hour_now != 22:
@@ -427,7 +424,7 @@ def main_loop():
             continue  # nothing to do
 
         written_watthour_1, written_watthour_2 = \
-            process(
+            process_sources_entries(
                 source_1_dict,
                 source_2_dict,
                 written_target_minutes,
