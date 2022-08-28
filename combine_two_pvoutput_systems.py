@@ -106,10 +106,10 @@ def add_datapoints(datapoints_count, datapoints_str) -> str:
             return content
 
 
-# == get_pvoutput_entries_since ==============================================
-def get_pvoutput_entries_since(url, since_hhmm) -> str:
+# == get_pvoutput_entries_today ==============================================
+def get_pvoutput_entries_today(url) -> str:
     """get pvoutput entries since time today"""
-    request_url = url + '&d="' + TODAY + '"&t="' + since_hhmm + '"'
+    request_url = url + '&d="' + TODAY + '"'
     while True:
         request = Request(request_url)
         content = execute_request(request_url, request)
@@ -135,19 +135,28 @@ def minutes_to_hhmm(minutes) -> str:
     return hhmm
 
 
+# prev tuple index CONSTANTS
+LINE_TUPLE_INDEX = 0
+WH_TUPLE_INDEX = 1
+VOLT_STR_TUPLE_INDEX = 2
+
+
 # == process_one_pvoutput_result =============================================
 def process_one_pvoutput_result(
-    line, prev_line, prev_wh, target_minutes, minutes_dict
-) -> tuple[int, int, str]:
+    line,
+    prev,  # tuple (prev_line, prev_wh, prev_volt_str)
+    target_minutes,
+    minutes_dict
+) -> tuple[int, int, str, str]:
     """process one pvoutput result"""
     (date_str, time_str, watthour_str, _, watt_str,
         _, _, _, _, _, volt_str) = line.split(',')
     if date_str != TODAY:  # skip dates not today
-        return 0, 0, ''  # not interested in other days
+        return 0, 0, '0', ''  # not interested in other days
 
     watthour = int(watthour_str)
     if volt_str == 'NaN':
-        volt_str = '0'
+        volt_str = prev[VOLT_STR_TUPLE_INDEX]  # just use previous volt value
 
     minutes = compute_minutes(line)
     if minutes % 5 != 0:
@@ -156,25 +165,27 @@ def process_one_pvoutput_result(
     line = date_str + ',' + \
         time_str + ',' + str(watthour) + ',' + watt_str + ',,,,' + volt_str
     if minutes > target_minutes:
-        if prev_line == '':
+        if prev[LINE_TUPLE_INDEX] == '':
             prev_minutes = minutes - 5  # no missing entries
         else:
-            prev_minutes = compute_minutes(prev_line)
-            minutes_dict[prev_minutes] = prev_line
+            prev_minutes = compute_minutes(prev[LINE_TUPLE_INDEX])
+            minutes_dict[prev_minutes] = prev[LINE_TUPLE_INDEX]
 
         if prev_minutes + 5 != minutes:
-            print('Missing entry:\n---> ' + prev_line + '\n---> ' + line)
+            print(
+                'Missing entry:\n---> ' +
+                prev[LINE_TUPLE_INDEX] + '\n---> ' + line)
             missing_entries = int(((minutes - prev_minutes - 5) / 5))
-            # print('Number of missing entries: ' + str(missingEntries))
             watthour = int(
-                prev_wh + ((watthour - prev_wh) / (1 + missing_entries))
+                prev[WH_TUPLE_INDEX] +
+                ((watthour - prev[WH_TUPLE_INDEX]) / (1 + missing_entries))
             )
             time_str = minutes_to_hhmm(prev_minutes + 5)
             added_line = date_str + ',' + \
                 time_str + ',' + str(watthour) + \
                 ',' + watt_str + ',,,,' + volt_str
 
-            print('Prev : ' + prev_line)
+            print('Prev : ' + prev[LINE_TUPLE_INDEX])
             print('Added: ' + added_line)
             print('Next : ' + line + '\n')
             minutes_dict[prev_minutes + 5] = added_line
@@ -182,7 +193,7 @@ def process_one_pvoutput_result(
         else:
             minutes_dict[minutes] = line
 
-    return minutes, watthour, line
+    return minutes, watthour, volt_str, line
 
 
 # == read_entries_in_memory_with_5_minutes_intervals =========================
@@ -198,6 +209,7 @@ def read_entries_in_memory_with_5_minutes_intervals(
     splitted = content.split(';')
     prev_line = ''
     prev_wh = written_watthour
+    prev_volt_str = '0'
     written_hhmm = since_time
     i = len(splitted) - 1
     while i >= 0:
@@ -205,21 +217,20 @@ def read_entries_in_memory_with_5_minutes_intervals(
         i -= 1
 
         prev_minutes = compute_minutes(prev_line)
-        minutes, watthour, line = process_one_pvoutput_result(
-            line, prev_line, prev_wh, written_target_minutes,
+        minutes, prev_wh, prev_volt_str, line = process_one_pvoutput_result(
+            line, (prev_line, prev_wh, prev_volt_str), written_target_minutes,
             minutes_dict)
         if line == '':
             continue  # skip empty lines
 
         if minutes <= written_target_minutes:
             written_hhmm = minutes_to_hhmm(minutes)
-            written_watthour = watthour
+            written_watthour = prev_wh
         else:
             if prev_line != '' and prev_minutes + 5 != minutes:
                 i += 1  # do this entry again next loop
 
         prev_line = line
-        prev_wh = watthour
 
     log(prefix +
         ' read_in_memory since ' + since_time + ': written=' + written_hhmm +
@@ -365,8 +376,7 @@ def compute_entries_since(
     prefix, url, written_target_minutes, written_watthour
 ) -> tuple[int, int, dict]:
     """compute dictionary entries since time"""
-    since_hhmm = minutes_to_hhmm(written_target_minutes)
-    content = get_pvoutput_entries_since(url, since_hhmm)
+    content = get_pvoutput_entries_today(url)
     current_minutes = compute_minutes(content)
     minutes_dict = {}
     written_watthour = 0
@@ -391,22 +401,21 @@ def main_loop():
         'Source 1', GET_SOURCE_1_URL, written_target_minutes, 0)
     written_minutes_2, written_watthour_2, _ = compute_entries_since(
         'Source 2', GET_SOURCE_2_URL, written_target_minutes, 0)
-    log('Sleeping for 5 minutes')
+    log('Sleeping till next 5 minutes plus 3 minutes')
 
     while True:
-
-        time.sleep(300)  # wait 5 minutes before checking again
+        now = datetime.now()
+        time.sleep(480 - (int(now.timestamp()) % 300))  # next 5+3 minutes incr
 
         # only check between 5 and 23 hours
-        hour_now = datetime.now().hour
-        if hour_now < 5 or hour_now > 22:
+        if now.hour < 5 or now.hour > 22:
             log('Outside solar generation hours (5..23)')
             sys.exit('Exiting program to start fresh tomorrow')
 
         written_minutes_1, _, source_1_dict = compute_entries_since(
             'Source 1', GET_SOURCE_1_URL, written_target_minutes,
             written_watthour_1)
-        if written_minutes_1 <= written_target_minutes and hour_now != 22:
+        if written_minutes_1 <= written_target_minutes and now.hour != 22:
             # when after 22:00 if there are results, process them anyway
             # because other inverter might be sleeping
             continue  # nothing to do
@@ -414,7 +423,7 @@ def main_loop():
         written_minutes_2, _, source_2_dict = compute_entries_since(
             'Source 2', GET_SOURCE_2_URL, written_target_minutes,
             written_watthour_2)
-        if written_minutes_2 <= written_target_minutes and hour_now != 22:
+        if written_minutes_2 <= written_target_minutes and now.hour != 22:
             # when after 22:00 if there are results, process them anyway
             # because other inverter might be sleeping
             continue  # nothing to do
