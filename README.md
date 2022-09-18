@@ -1,5 +1,3 @@
-[![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
-
 # Combine PVOutput Systems
 Simple Python3 script to combine two PVOutput Systems continously (normally once per 5 minutes) into a target PVOutput System.
 
