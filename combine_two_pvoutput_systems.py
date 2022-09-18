@@ -6,6 +6,8 @@ Simple Python3 script to combine two PVOutput Systems continously
 import time
 import sys
 import configparser
+import socket
+import traceback
 from datetime import datetime
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen, Request
@@ -71,7 +73,7 @@ def execute_request(url, request) -> str:
     """execute request and log url in case of errors"""
     errorstring = ''
     try:
-        with urlopen(request, timeout=10) as response:
+        with urlopen(request, timeout=30) as response:
             body = response.read()
             content = body.decode("utf-8")
             return content
@@ -81,6 +83,11 @@ def execute_request(url, request) -> str:
         errorstring = str(error.reason)
     except TimeoutError:
         errorstring = 'Request timed out'
+    except socket.timeout:
+        errorstring = 'Socket timed out'
+    except Exception as ex:  # pylint: disable=broad-except
+        errorstring = 'urlopen exception: ' + str(ex)
+        traceback.print_exc()
 
     log('ERROR: ' + url + ' -> ' + errorstring)
     time.sleep(60)  # retry after 1 minute
